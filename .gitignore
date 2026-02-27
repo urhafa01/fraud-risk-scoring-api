@@ -1,6 +1,9 @@
 # Data & models
 data/
-artifacts/
+artifacts/*
+!artifacts/
+!artifacts/fraud_model.joblib
+!artifacts/threshold.joblib
 
 # Python
 __pycache__/
@@ -14,4 +17,4 @@ venv/
 # Mac
 .DS_Store 
 
-.history/
+.history/        
