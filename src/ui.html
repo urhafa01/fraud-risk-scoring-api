@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Fraud Risk Scoring UI</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; padding: 0 16px; }
+      h1 { margin-bottom: 6px; }
+      .muted { color: #666; margin-top: 0; }
+      textarea { width: 100%; height: 260px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+      button { padding: 10px 14px; cursor: pointer; }
+      .row { display: flex; gap: 10px; align-items: center; margin: 10px 0; }
+      .card { border: 1px solid #ddd; border-radius: 10px; padding: 14px; margin-top: 12px; }
+      pre { white-space: pre-wrap; word-break: break-word; }
+      .ok { color: #0a7a0a; }
+      .bad { color: #b00020; }
+      .small { font-size: 12px; color: #666; }
+    </style>
+  </head>
+  <body>
+    <h1>Fraud Risk Scoring UI</h1>
+    <p class="muted">Paste one transaction JSON and get a fraud risk score (served by your FastAPI backend).</p>
+
+    <div class="card">
+      <div class="row">
+        <button id="fillExample">Fill Example</button>
+        <button id="run">Predict</button>
+      </div>
+
+      <div class="small">Request JSON (must include Time, Amount, V1..V28)</div>
+      <textarea id="payload"></textarea>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <strong>Result</strong>
+        <span id="status"></span>
+      </div>
+      <pre id="out">{}</pre>
+    </div>
+
+    <script>
+      const example = {
+        "Time": 0,
+        "V1": -1.3598071336738,
+        "V2": -0.0727811733098,
+        "V3": 2.5363467379691,
+        "V4": 1.3781552242744,
+        "V5": -0.3383207699425,
+        "V6": 0.4623877777623,
+        "V7": 0.2395985540613,
+        "V8": 0.098697901261,
+        "V9": 0.3637869696112,
+        "V10": 0.0907941719789,
+        "V11": -0.5515995332608,
+        "V12": -0.6178008557623,
+        "V13": -0.9913898472354,
+        "V14": -0.3111693536999,
+        "V15": 1.4681769720943,
+        "V16": -0.4704005252595,
+        "V17": 0.2079712419292,
+        "V18": 0.0257905801986,
+        "V19": 0.4039929602557,
+        "V20": 0.2514120982397,
+        "V21": -0.0183067779442,
+        "V22": 0.2778375755589,
+        "V23": -0.1104739101888,
+        "V24": 0.0669280749147,
+        "V25": 0.1285393582735,
+        "V26": -0.1891148438888,
+        "V27": 0.1335583767404,
+        "V28": -0.0210530534538,
+        "Amount": 149.62
+      };
+
+      const payloadEl = document.getElementById("payload");
+      const outEl = document.getElementById("out");
+      const statusEl = document.getElementById("status");
+
+      document.getElementById("fillExample").onclick = () => {
+        payloadEl.value = JSON.stringify(example, null, 2);
+      };
+
+      document.getElementById("run").onclick = async () => {
+        statusEl.textContent = "";
+        outEl.textContent = "{}";
+
+        let data;
+        try {
+          data = JSON.parse(payloadEl.value);
+        } catch (e) {
+          statusEl.innerHTML = '<span class="bad">Invalid JSON</span>';
+          outEl.textContent = String(e);
+          return;
+        }
+
+        try {
+          const res = await fetch("/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+          });
+
+          const txt = await res.text();
+          let json;
+          try { json = JSON.parse(txt); } catch { json = { raw: txt }; }
+
+          outEl.textContent = JSON.stringify(json, null, 2);
+
+          if (!res.ok) {
+            statusEl.innerHTML = '<span class="bad">Error</span>';
+            return;
+          }
+
+          if (json.fraud_prediction === true) {
+            statusEl.innerHTML = '<span class="bad">Fraud: TRUE</span>';
+          } else if (json.fraud_prediction === false) {
+            statusEl.innerHTML = '<span class="ok">Fraud: FALSE</span>';
+          } else {
+            statusEl.innerHTML = '<span class="ok">OK</span>';
+          }
+        } catch (e) {
+          statusEl.innerHTML = '<span class="bad">Request failed</span>';
+          outEl.textContent = String(e);
+        }
+      };
+
+      // auto-fill on load
+      payloadEl.value = JSON.stringify(example, null, 2);
+    </script>
+  </body>
+</html>

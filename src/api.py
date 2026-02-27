@@ -26,3 +26,11 @@ def predict(transaction: dict):
         "fraud_prediction": bool(fraud),
         "threshold": float(threshold)
     } 
+
+from fastapi.responses import HTMLResponse
+from pathlib import Path
+
+@app.get("/ui", response_class=HTMLResponse)
+def ui():
+    html_path = Path(__file__).parent / "ui.html"
+    return html_path.read_text(encoding="utf-8")
