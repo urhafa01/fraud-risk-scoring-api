@@ -1,0 +1,15 @@
+# Data & models
+data/
+artifacts/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environments
+venv/
+.venv/
+.env
+
+# Mac
+.DS_Store 
